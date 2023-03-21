@@ -145,8 +145,7 @@ class VecEnvWrapper(VecEnv):
 
     def __init__(self, venv, observation_space=None, action_space=None):
         self.venv = venv
-        super().__init__(self,
-                        num_envs=venv.num_envs,
+        super().__init__(num_envs=venv.num_envs,
                         observation_space=observation_space or venv.observation_space,
                         action_space=action_space or venv.action_space)
 
