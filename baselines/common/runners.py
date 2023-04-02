@@ -13,15 +13,20 @@ class AbstractEnvRunner(ABC):
         if overcooked:
             self.obs0 = np.zeros((nenv,) + env.observation_space.shape, dtype=env.observation_space.dtype.name)
             self.obs1 = np.zeros((nenv,) + env.observation_space.shape, dtype=env.observation_space.dtype.name)
-
-            obs = env.reset()
+            if env.level_sampler:
+                obs, level_seed = env.reset()
+            else:
+                obs = env.reset()
             both_obs = obs["both_agent_obs"]
             self.obs0[:] = both_obs[:, 0, :, :]
             self.obs1[:] = both_obs[:, 1, :, :]
             self.curr_state = obs["overcooked_state"]
             self.other_agent_idx = obs["other_agent_env_idx"]
         else:
-            self.obs[:] = env.reset()
+            if env.level_sampler:
+                self.obs[:], level_seed = env.reset()
+            else:
+                self.obs[:] = env.reset()
         self.nsteps = nsteps
         self.states = model.initial_state
         self.dones = [False for _ in range(nenv)]
