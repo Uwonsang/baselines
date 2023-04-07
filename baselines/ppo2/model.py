@@ -38,6 +38,7 @@ class Model(object):
 
                 # Train model for training
                 if microbatch_size is None:
+
                     train_model = policy(nbatch_train, nsteps, sess)
                 else:
                     train_model = policy(microbatch_size, nsteps, sess)

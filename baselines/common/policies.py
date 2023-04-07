@@ -41,6 +41,7 @@ class PolicyWithValue(object):
         vf_latent = vf_latent if vf_latent is not None else latent
 
         vf_latent = tf.layers.flatten(vf_latent)
+
         latent = tf.layers.flatten(latent)
 
         # Based on the action space, will select what probability distribution type
@@ -50,11 +51,14 @@ class PolicyWithValue(object):
 
         # Actions probs
         action_probs = self.pd.mean
+
         self.action_probs = tf.identity(action_probs, name="action_probs")
 
         # Take an action
         action = self.pd.sample()
+
         self.action = tf.identity(action, name="action")
+
 
         # Calculate the neg log of our probability
         self.neglogp = self.pd.neglogp(self.action)
@@ -67,7 +71,8 @@ class PolicyWithValue(object):
         else:
             self.vf = fc(vf_latent, 'vf', 1)
             self.vf = self.vf[:,0]
-        
+
+
         self.vf = tf.identity(self.vf, name="value")
 
     def _evaluate(self, variables, observation, **extra_feed):
@@ -131,9 +136,12 @@ def build_policy(env, policy_network, value_network=None,  normalize_observation
     if isinstance(policy_network, str):
         network_type = policy_network
         policy_network = get_network_builder(network_type)(**policy_kwargs)
-
     def policy_fn(nbatch=None, nsteps=None, sess=None, observ_placeholder=None):
         ob_space = env.observation_space
+
+        #함수 반환해서 policy 뽑을때 쓰임
+        #print(ob_space,nbatch,nsteps,sess,observ_placeholder, "hey")
+        #Box(5, 4, 20) 30 1 <tensorflow.python.client.session.InteractiveSession object at 0x7fe64ea7ff50> None hey
 
         X = observ_placeholder if observ_placeholder is not None else observation_placeholder(ob_space, batch_size=nbatch)
 
@@ -146,6 +154,7 @@ def build_policy(env, policy_network, value_network=None,  normalize_observation
             encoded_x = X
 
         encoded_x = encode_observation(ob_space, encoded_x)
+
 
         with tf.variable_scope('pi', reuse=tf.AUTO_REUSE):
             policy_latent = policy_network(encoded_x)
@@ -161,6 +170,7 @@ def build_policy(env, policy_network, value_network=None,  normalize_observation
 
 
         _v_net = value_network
+
 
         if _v_net is None or _v_net == 'shared':
             vf_latent = policy_latent

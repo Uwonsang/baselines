@@ -1,18 +1,32 @@
 import multiprocessing as mp
-
+import inspect
 import numpy as np
 from .vec_env import VecEnv, CloudpickleWrapper, clear_mpi_env_vars
-
-
+from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
+from overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
+import os
 def worker(remote, parent_remote, env_fn_wrappers):
     def step_env(env, action):
+
         ob, reward, done, info = env.step(action)
+
         if done:
             ob = env.reset()
+
         return ob, reward, done, info
 
     parent_remote.close()
+
     envs = [env_fn_wrapper() for env_fn_wrapper in env_fn_wrappers.x]
+
+
+    def seed(tmp_env,tmp_seed):
+        _params = tmp_overcooked_params
+        _params["mdp_params"]["layout_name"] = layout_name_list[tmp_seed]
+        mdp = OvercookedGridworld.from_layout_name(**_params["mdp_params"])
+        base_env = OvercookedEnv(mdp, **_params["env_params"])
+        tmp_env.custom_init(base_env, featurize_fn=lambda x: mdp.lossless_state_encoding(x),
+                        baselines=True)
     try:
         while True:
             cmd, data = remote.recv()
@@ -31,7 +45,8 @@ def worker(remote, parent_remote, env_fn_wrappers):
                 remote.send(CloudpickleWrapper((envs[0].observation_space, envs[0].action_space, envs[0].spec)))
             elif cmd == 'seed':
                 new_seed = data
-                envs[0].seed(new_seed)
+                seed(envs[0],new_seed)
+                #envs[0].seed(new_seed)
                 remote.send(envs[0].reset())
             elif cmd == 'level_seed':
                 remote.send(envs[0].level_seed)
@@ -68,18 +83,21 @@ class SubprocVecEnv(VecEnv):
         env_fns = np.array_split(env_fns, self.nremotes)
         ctx = mp.get_context(context)
         self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(self.nremotes)])
+
         self.ps = [ctx.Process(target=worker, args=(work_remote, remote, CloudpickleWrapper(env_fn)))
                    for (work_remote, remote, env_fn) in zip(self.work_remotes, self.remotes, env_fns)]
+
         for p in self.ps:
             p.daemon = True  # if the main process crashes, we should not cause things to hang
             with clear_mpi_env_vars():
                 p.start()
         for remote in self.work_remotes:
             remote.close()
-
         self.remotes[0].send(('get_spaces_spec', None))
         observation_space, action_space, self.spec = self.remotes[0].recv().x
+
         self.viewer = None
+
         VecEnv.__init__(self, nenvs, observation_space, action_space)
 
     def step_async(self, actions):
@@ -89,7 +107,8 @@ class SubprocVecEnv(VecEnv):
             remote.send(('step', action))
         self.waiting = True
 
-    def step_wait(self):
+    def step_wait(self): #thread 수만큼
+
         self._assert_not_closed()
         results = [remote.recv() for remote in self.remotes]
         results = _flatten_list(results)
@@ -154,3 +173,46 @@ def _flatten_list(l):
     assert all([len(l_) > 0 for l_ in l])
 
     return [l__ for l_ in l for l__ in l_]
+
+
+##################
+# MDP/ENV PARAMS #
+##################
+
+new_path = "/app/overcooked_layout"
+list_dir = os.listdir(new_path)
+layout_name_list = []
+for i in list_dir:
+    if i in ['__init__.py', '__pycache__']:
+        continue
+    tmp_name = i.split('.')[0]
+    layout_name_list.append(tmp_name)
+# Mdp params
+layout_name = "simple"
+start_order_list = None
+
+rew_shaping_params = {
+    "PLACEMENT_IN_POT_REW": 3,
+    "DISH_PICKUP_REWARD": 3,
+    "SOUP_PICKUP_REWARD": 5,
+    "DISH_DISP_DISTANCE_REW": 0,
+    "POT_DISTANCE_REW": 0,
+    "SOUP_DISTANCE_REW": 0,
+}
+
+# Env params
+horizon = 400
+
+
+
+
+tmp_overcooked_params = {
+    "mdp_params": {
+        "layout_name": layout_name,
+        "start_order_list": start_order_list,
+        "rew_shaping_params": rew_shaping_params
+    },
+    "env_params": {
+        "horizon": horizon
+    }
+}

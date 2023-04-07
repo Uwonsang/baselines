@@ -7,6 +7,7 @@ from collections import deque
 class VecMonitor(VecEnvWrapper):
     def __init__(self, venv, filename=None, keep_buf=0):
         VecEnvWrapper.__init__(self, venv)
+
         self.eprets = None
         self.eplens = None
         self.epcount = 0

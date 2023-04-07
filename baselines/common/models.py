@@ -216,6 +216,7 @@ def get_network_builder(name):
         return network_fn
 
     """
+
     if callable(name):
         return name
     elif name in mapping:

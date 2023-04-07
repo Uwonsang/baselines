@@ -10,6 +10,7 @@ class AbstractEnvRunner(ABC):
         self.obs = np.zeros((nenv,) + env.observation_space.shape, dtype=env.observation_space.dtype.name)
 
         overcooked = 'env_name' in env.__dict__.keys() and env.env_name == "Overcooked-v0"
+        env.level_sampler = False
         if overcooked:
             self.obs0 = np.zeros((nenv,) + env.observation_space.shape, dtype=env.observation_space.dtype.name)
             self.obs1 = np.zeros((nenv,) + env.observation_space.shape, dtype=env.observation_space.dtype.name)

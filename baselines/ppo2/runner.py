@@ -29,6 +29,7 @@ class Runner(AbstractEnvRunner):
         int_time = 0
         num_envs = len(self.curr_state)
 
+
         if self.env.trajectory_sp:
             # Selecting which environments should run fully in self play
             sp_envs_bools = np.random.random(num_envs) < self.env.self_play_randomization
@@ -38,14 +39,14 @@ class Runner(AbstractEnvRunner):
 
         from overcooked_ai_py.mdp.actions import Action
 
-        def other_agent_action():
+        def other_agent_action():#안쓰임
             if self.env.use_action_method:
                 other_agent_actions = self.env.other_agent.actions(self.curr_state, self.other_agent_idx)
                 return [Action.ACTION_TO_INDEX[a] for a in other_agent_actions]
             else:
                 other_agent_actions = self.env.other_agent.direct_policy(self.obs1)
                 return other_agent_actions
-            
+
 
         for _ in range(self.nsteps):
             # Given observations, get action value and neglopacs
@@ -56,6 +57,8 @@ class Runner(AbstractEnvRunner):
 
                 import time
                 current_simulation_time = time.time()
+                if self.env.self_play_randomization == 0:
+                    print(lll)
 
                 # Randomize at either the trajectory level or the individual timestep level
                 if self.env.trajectory_sp:
@@ -68,10 +71,12 @@ class Runner(AbstractEnvRunner):
                     # If there are environments selected to run in SP, generate self-play actions
                     if sum(sp_envs_bools) != 0:
                         other_agent_actions_sp, _, _, _ = self.model.step(self.obs1, S=self.states, M=self.dones)
-
+                        #other_agent_action_sp
                     # Select other agent actions for each environment depending on whether it was selected
                     # for self play or not
                     other_agent_actions = []
+
+
                     for i in range(num_envs):
                         if sp_envs_bools[i]:
                             sp_action = other_agent_actions_sp[i]
@@ -81,8 +86,8 @@ class Runner(AbstractEnvRunner):
                             other_agent_actions.append(bc_action)
                 
                 else:
-                    other_agent_actions = np.zeros_like(self.curr_state)
 
+                    other_agent_actions = np.zeros_like(self.curr_state)
                     if self.env.self_play_randomization < 1:
                         # Get actions through the action method of the agent
                         other_agent_actions = other_agent_action()
@@ -121,7 +126,8 @@ class Runner(AbstractEnvRunner):
             # Take actions in env and look the results
             # Infos contains a ton of useful informations
             if overcooked:
-                obs, rewards, self.dones, infos = self.env.step(joint_action)
+                obs, rewards, self.dones, infos = self.env.step(joint_action) #vec_env step => baselines_util step_wait
+                #subproc_vec_env step wait
                 both_obs = obs["both_agent_obs"]
                 self.obs0[:] = both_obs[:, 0, :, :]
                 self.obs1[:] = both_obs[:, 1, :, :]
@@ -143,12 +149,12 @@ class Runner(AbstractEnvRunner):
         mb_obs = np.asarray(mb_obs, dtype=self.obs.dtype)
         mb_rewards = np.asarray(mb_rewards, dtype=np.float32)
         mb_actions = np.asarray(mb_actions)
+
         mb_values = np.asarray(mb_values, dtype=np.float32)
         mb_neglogpacs = np.asarray(mb_neglogpacs, dtype=np.float32)
         mb_dones = np.asarray(mb_dones, dtype=np.bool)
         last_values = self.model.value(self.obs, S=self.states, M=self.dones)
 
-        # discount/bootstrap off value fn
         mb_returns = np.zeros_like(mb_rewards)
         mb_advs = np.zeros_like(mb_rewards)
         lastgaelam = 0

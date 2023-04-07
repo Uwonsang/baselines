@@ -93,7 +93,7 @@ def learn(*, network, env, total_timesteps, early_stopping = False, eval_env = N
     total_timesteps = int(total_timesteps)
 
     policy = build_policy(env, network, **network_kwargs)
-    
+
     bestrew = 0
     # Get the nb of env
     nenvs = env.num_envs
@@ -103,13 +103,15 @@ def learn(*, network, env, total_timesteps, early_stopping = False, eval_env = N
     ac_space = env.action_space
 
     # Calculate the batch_size
-    nbatch = nenvs * nsteps
+    nbatch = nenvs * nsteps #30*400
     nbatch_train = nbatch // nminibatches
 
     # Instantiate the model object (that creates act_model and train_model)
     if model_fn is None:
         from baselines.ppo2.model import Model
         model_fn = Model
+    #ob_space, ac_space, nenvs,nbatch_train,nsteps,ent_coef,vf_coef,max_grad_norm,scope,"scope")
+    #Box(5, 4, 20) Discrete(6) 30 2000 400 0.0 0.5 0.5 ppo_agent scope
 
     model = model_fn(policy=policy, ob_space=ob_space, ac_space=ac_space, nbatch_act=nenvs, nbatch_train=nbatch_train,
                     nsteps=nsteps, ent_coef=ent_coef, vf_coef=vf_coef,
@@ -133,10 +135,12 @@ def learn(*, network, env, total_timesteps, early_stopping = False, eval_env = N
 
     run_info = defaultdict(list)
     nupdates = total_timesteps//nbatch
-    print("TOT NUM UPDATES", nupdates)
+
+
     for update in range(1, nupdates+1):
         assert nbatch % nminibatches == 0, "Have {} total batch size and want {} minibatches, can't split evenly".format(nbatch, nminibatches)
         # Start timer
+
         tstart = time.perf_counter()
         frac = 1.0 - (update - 1.0) / nupdates
         # Calculate the learning rate
@@ -145,7 +149,8 @@ def learn(*, network, env, total_timesteps, early_stopping = False, eval_env = N
         cliprangenow = cliprange(frac)
         # Get minibatch
         obs, returns, masks, actions, values, neglogpacs, states, epinfos = runner.run() #pylint: disable=E0632
-        
+        # 30*400 flatitng
+
         if eval_env is not None:
             eval_obs, eval_returns, eval_masks, eval_actions, eval_values, eval_neglogpacs, eval_states, eval_epinfos = eval_runner.run() #pylint: disable=E0632
 
