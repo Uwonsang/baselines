@@ -104,7 +104,6 @@ class VecEnv(ABC):
 
         This is available for backwards compatibility.
         """
-
         self.step_async(actions)
         return self.step_wait()
 

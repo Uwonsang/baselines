@@ -27,6 +27,7 @@ def worker(remote, parent_remote, env_fn_wrappers):
         base_env = OvercookedEnv(mdp, **_params["env_params"])
         tmp_env.custom_init(base_env, featurize_fn=lambda x: mdp.lossless_state_encoding(x),
                         baselines=True)
+        tmp_env.seed(tmp_seed)
     try:
         while True:
             cmd, data = remote.recv()
@@ -108,7 +109,6 @@ class SubprocVecEnv(VecEnv):
         self.waiting = True
 
     def step_wait(self): #thread 수만큼
-
         self._assert_not_closed()
         results = [remote.recv() for remote in self.remotes]
         results = _flatten_list(results)
