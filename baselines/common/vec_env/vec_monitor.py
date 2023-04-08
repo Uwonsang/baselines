@@ -35,8 +35,7 @@ class VecMonitor(VecEnvWrapper):
         for (i, (done, ret, eplen, info)) in enumerate(zip(dones, self.eprets, self.eplens, infos)):
             info = info.copy()
             if done:
-                epinfo = info['episode'].update({'l': eplen, 't': round(time.time() - self.tstart, 6)})
-                # epinfo = info.update({'l': eplen, 't': round(time.time() - self.tstart, 6)})
+                epinfo = info['episode'].update({'r': ret, 'l': eplen, 't': round(time.time() - self.tstart, 6)})
                 # info['episode'] = epinfo
                 if self.keep_buf:
                     self.epret_buf.append(ret)
@@ -45,7 +44,7 @@ class VecMonitor(VecEnvWrapper):
                 self.eprets[i] = 0
                 self.eplens[i] = 0
                 if self.results_writer:
-                    self.results_writer.write_row(info['episode'])
+                    self.results_writer.write_row(epinfo)
             newinfos.append(info)
 
         return obs, rews, dones, newinfos
