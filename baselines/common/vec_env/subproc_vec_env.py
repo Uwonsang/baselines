@@ -23,6 +23,7 @@ def worker(remote, parent_remote, env_fn_wrappers):
     def seed(tmp_env,tmp_seed):
         _params = tmp_overcooked_params
         _params["mdp_params"]["layout_name"] = layout_name_list[tmp_seed]
+        print(_params["mdp_params"]["layout_name"],tmp_seed,"map name and seed")
         mdp = OvercookedGridworld.from_layout_name(**_params["mdp_params"])
         base_env = OvercookedEnv(mdp, **_params["env_params"])
         tmp_env.custom_init(base_env, featurize_fn=lambda x: mdp.lossless_state_encoding(x),
@@ -114,6 +115,12 @@ class SubprocVecEnv(VecEnv):
         results = _flatten_list(results)
         self.waiting = False
         obs, rews, dones, infos = zip(*results)
+        #print(dones,"dones")
+
+        #print(infos,"infos in subprocgen")
+        if True in dones:
+            pass
+            #print(infos,"infos in subprocgen")
         return _flatten_obs(obs), np.stack(rews), np.stack(dones), infos
 
     def reset(self):
