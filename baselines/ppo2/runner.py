@@ -58,7 +58,7 @@ class Runner(AbstractEnvRunner):
                 import time
                 current_simulation_time = time.time()
                 if self.env.self_play_randomization == 0:
-                    print(lll)
+                    pass
 
                 # Randomize at either the trajectory level or the individual timestep level
                 if self.env.trajectory_sp:

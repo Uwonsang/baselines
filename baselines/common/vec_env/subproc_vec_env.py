@@ -47,8 +47,8 @@ def worker(remote, parent_remote, env_fn_wrappers):
                 remote.send(CloudpickleWrapper((envs[0].observation_space, envs[0].action_space, envs[0].spec)))
             elif cmd == 'seed':
                 new_seed = data
-                seed(envs[0],new_seed)
-                #envs[0].seed(new_seed)
+                #seed(envs[0],new_seed)
+                envs[0].seed(new_seed)
                 remote.send(envs[0].reset())
             elif cmd == 'level_seed':
                 remote.send(envs[0].level_seed)
@@ -115,12 +115,10 @@ class SubprocVecEnv(VecEnv):
         results = _flatten_list(results)
         self.waiting = False
         obs, rews, dones, infos = zip(*results)
-        #print(dones,"dones")
 
-        #print(infos,"infos in subprocgen")
         if True in dones:
             pass
-            #print(infos,"infos in subprocgen")
+
         return _flatten_obs(obs), np.stack(rews), np.stack(dones), infos
 
     def reset(self):
