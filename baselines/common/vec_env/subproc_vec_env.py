@@ -23,7 +23,7 @@ def worker(remote, parent_remote, env_fn_wrappers):
     def seed(tmp_env,tmp_seed):
         _params = tmp_overcooked_params
         _params["mdp_params"]["layout_name"] = layout_name_list[tmp_seed]
-        print(_params["mdp_params"]["layout_name"],tmp_seed,"map name and seed")
+        #print(_params["mdp_params"]["layout_name"],tmp_seed,"map name and seed")
         mdp = OvercookedGridworld.from_layout_name(**_params["mdp_params"])
         base_env = OvercookedEnv(mdp, **_params["env_params"])
         tmp_env.custom_init(base_env, featurize_fn=lambda x: mdp.lossless_state_encoding(x),
@@ -47,8 +47,8 @@ def worker(remote, parent_remote, env_fn_wrappers):
                 remote.send(CloudpickleWrapper((envs[0].observation_space, envs[0].action_space, envs[0].spec)))
             elif cmd == 'seed':
                 new_seed = data
-                #seed(envs[0],new_seed)
-                envs[0].seed(new_seed)
+                seed(envs[0],new_seed)
+                #envs[0].seed(new_seed)
                 remote.send(envs[0].reset())
             elif cmd == 'level_seed':
                 remote.send(envs[0].level_seed)

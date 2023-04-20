@@ -21,12 +21,11 @@ class VecNormalize(VecEnvWrapper):
 
     def step_wait(self):
         obs, rews, news, infos = self.venv.step_wait()
-        self.ret = self.ret * self.gamma + rews
-        obs = self._obfilt(obs)
-        if self.ret_rms:
-            self.ret_rms.update(self.ret)
-            rews = np.clip(rews / np.sqrt(self.ret_rms.var + self.epsilon), -self.cliprew, self.cliprew)
-        self.ret[news] = 0.
+        #self.ret = self.ret * self.gamma + rews
+        #if self.ret_rms:
+         #   self.ret_rms.update(self.ret)
+          #  rews = np.clip(rews / np.sqrt(self.ret_rms.var + self.epsilon), -self.cliprew, self.cliprew)
+        #self.ret[news] = 0.
         return obs, rews, news, infos
 
     def _obfilt(self, obs):
