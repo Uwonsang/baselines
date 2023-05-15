@@ -1,6 +1,7 @@
 import multiprocessing as mp
 import inspect
 import numpy as np
+import random
 from .vec_env import VecEnv, CloudpickleWrapper, clear_mpi_env_vars
 from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
 from overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
@@ -19,14 +20,15 @@ def worker(remote, parent_remote, env_fn_wrappers):
 
     envs = [env_fn_wrapper() for env_fn_wrapper in env_fn_wrappers.x]
 
-
+    random.seed(10)
     def seed(tmp_env,tmp_seed):
         _params = tmp_overcooked_params
         _params["mdp_params"]["layout_name"] = layout_name_list[tmp_seed]
         #print(_params["mdp_params"]["layout_name"],tmp_seed,"map name and seed")
         mdp = OvercookedGridworld.from_layout_name(**_params["mdp_params"])
         base_env = OvercookedEnv(mdp, **_params["env_params"])
-        tmp_env.custom_init(base_env, featurize_fn=lambda x: mdp.lossless_state_encoding(x),
+        seeding_num = random.choice([0, 3])
+        tmp_env.custom_init(base_env, seeding_num, featurize_fn=lambda x: mdp.lossless_state_encoding(x),
                         baselines=True)
         tmp_env.seed(tmp_seed)
     try:
@@ -184,14 +186,17 @@ def _flatten_list(l):
 # MDP/ENV PARAMS #
 ##################
 
-new_path = "/app/overcooked_layout"
+new_path = "/app/overcooked_layout_7"
+
 list_dir = os.listdir(new_path)
+list_dir = sorted(list_dir, key=lambda x: int(x.split('_')[0]))
 layout_name_list = []
 for i in list_dir:
-    if i in ['__init__.py', '__pycache__']:
-        continue
     tmp_name = i.split('.')[0]
     layout_name_list.append(tmp_name)
+
+
+
 # Mdp params
 layout_name = "simple"
 start_order_list = None
@@ -207,8 +212,6 @@ rew_shaping_params = {
 
 # Env params
 horizon = 400
-
-
 
 
 tmp_overcooked_params = {
