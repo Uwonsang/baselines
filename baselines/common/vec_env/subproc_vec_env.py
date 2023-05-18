@@ -186,7 +186,7 @@ def _flatten_list(l):
 # MDP/ENV PARAMS #
 ##################
 
-new_path = "/app/overcooked_layout_7"
+new_path = "/app/overcooked_layout_big"
 
 list_dir = os.listdir(new_path)
 list_dir = sorted(list_dir, key=lambda x: int(x.split('_')[0]))
