@@ -1,11 +1,9 @@
 import multiprocessing as mp
 import inspect
 import numpy as np
-import random
 from .vec_env import VecEnv, CloudpickleWrapper, clear_mpi_env_vars
-from overcooked_ai_py.mdp.overcooked_mdp import OvercookedGridworld
-from overcooked_ai_py.mdp.overcooked_env import OvercookedEnv
 import os
+
 def worker(remote, parent_remote, env_fn_wrappers):
     def step_env(env, action):
 
@@ -20,17 +18,6 @@ def worker(remote, parent_remote, env_fn_wrappers):
 
     envs = [env_fn_wrapper() for env_fn_wrapper in env_fn_wrappers.x]
 
-    random.seed(10)
-    def seed(tmp_env,tmp_seed):
-        _params = tmp_overcooked_params
-        _params["mdp_params"]["layout_name"] = layout_name_list[tmp_seed]
-        #print(_params["mdp_params"]["layout_name"],tmp_seed,"map name and seed")
-        mdp = OvercookedGridworld.from_layout_name(**_params["mdp_params"])
-        base_env = OvercookedEnv(mdp, **_params["env_params"])
-        seeding_num = random.choice([0, 3])
-        tmp_env.custom_init(base_env, seeding_num, featurize_fn=lambda x: mdp.lossless_state_encoding(x),
-                        baselines=True)
-        tmp_env.seed(tmp_seed)
     try:
         while True:
             cmd, data = remote.recv()
@@ -49,8 +36,7 @@ def worker(remote, parent_remote, env_fn_wrappers):
                 remote.send(CloudpickleWrapper((envs[0].observation_space, envs[0].action_space, envs[0].spec)))
             elif cmd == 'seed':
                 new_seed = data
-                seed(envs[0],new_seed)
-                #envs[0].seed(new_seed)
+                envs[0].seed(new_seed)
                 remote.send(envs[0].reset())
             elif cmd == 'level_seed':
                 remote.send(envs[0].level_seed)
@@ -118,9 +104,6 @@ class SubprocVecEnv(VecEnv):
         self.waiting = False
         obs, rews, dones, infos = zip(*results)
 
-        if True in dones:
-            pass
-
         return _flatten_obs(obs), np.stack(rews), np.stack(dones), infos
 
     def reset(self):
@@ -180,47 +163,3 @@ def _flatten_list(l):
     assert all([len(l_) > 0 for l_ in l])
 
     return [l__ for l_ in l for l__ in l_]
-
-
-##################
-# MDP/ENV PARAMS #
-##################
-
-new_path = "/app/overcooked_layout_big"
-
-list_dir = os.listdir(new_path)
-list_dir = sorted(list_dir, key=lambda x: int(x.split('_')[0]))
-layout_name_list = []
-for i in list_dir:
-    tmp_name = i.split('.')[0]
-    layout_name_list.append(tmp_name)
-
-
-
-# Mdp params
-layout_name = "simple"
-start_order_list = None
-
-rew_shaping_params = {
-    "PLACEMENT_IN_POT_REW": 3,
-    "DISH_PICKUP_REWARD": 3,
-    "SOUP_PICKUP_REWARD": 5,
-    "DISH_DISP_DISTANCE_REW": 0,
-    "POT_DISTANCE_REW": 0,
-    "SOUP_DISTANCE_REW": 0,
-}
-
-# Env params
-horizon = 400
-
-
-tmp_overcooked_params = {
-    "mdp_params": {
-        "layout_name": layout_name,
-        "start_order_list": start_order_list,
-        "rew_shaping_params": rew_shaping_params
-    },
-    "env_params": {
-        "horizon": horizon
-    }
-}
