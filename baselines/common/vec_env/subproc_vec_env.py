@@ -25,6 +25,12 @@ def worker(remote, parent_remote, env_fn_wrappers):
                 remote.send([step_env(env, action) for env, action in zip(envs, data)])
             elif cmd == 'reset':
                 remote.send([env.reset() for env in envs])
+            elif cmd == 'print':
+                remote.send([env.env_print() for env in envs])
+            elif cmd == 'init':
+                remote.send([env.init_record() for env in envs])
+            elif cmd == 'save':
+                remote.send([env.save_record() for env in envs])
             elif cmd == 'get_avail_actions':
                 remote.send([env.get_avail_actions() for env in envs])
             elif cmd == 'render':
@@ -126,12 +132,20 @@ class SubprocVecEnv(VecEnv):
 
     def get_images(self):
         self._assert_not_closed()
-        for pipe in self.remotes:
-            pipe.send(('render', None))
-        imgs = [pipe.recv() for pipe in self.remotes]
-        imgs = _flatten_list(imgs)
-        return imgs
-
+        self.remotes[0].send(('print', None))
+    def init_record(self):
+        self._assert_not_closed()
+        self.remotes[0].send(('init', None))
+    def save_record(self):
+        self._assert_not_closed()
+        self.remotes[0].send(('save', None))
+    # def get_images(self):
+    #     self._assert_not_closed()
+    #     for pipe in self.remotes:
+    #         pipe.send(('print', None))
+    #     imgs = [pipe.recv() for pipe in self.remotes]
+    #     imgs = _flatten_list(imgs)
+    #     return imgs
     def get_avail_actions(self):
         self._assert_not_closed()
         for pipe in self.remotes:

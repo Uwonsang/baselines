@@ -106,6 +106,12 @@ class VecEnv(ABC):
         """
         self.step_async(actions)
         return self.step_wait()
+    def render_image(self):
+        self.get_images()
+    def init_record(self):
+        self.init_record()
+    def save_record(self):
+        self.save_record()
 
     def render(self, mode='human'):
         imgs = self.get_images()
@@ -167,7 +173,11 @@ class VecEnvWrapper(VecEnv):
         return self.venv.render(mode=mode)
 
     def get_images(self):
-        return self.venv.get_images()
+        self.venv.get_images()
+    def init_record(self):
+        self.venv.init_record()
+    def save_record(self):
+        self.venv.save_record()
 
     def __getattr__(self, name):
         if name.startswith('_'):
